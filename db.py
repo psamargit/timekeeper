@@ -39,6 +39,7 @@ MIGRATIONS = [
         valor TEXT NOT NULL
     )
     """,
+    "ALTER TABLE tasks ADD COLUMN hora_inicio TEXT DEFAULT ''",
 ]
 
 
@@ -108,6 +109,7 @@ def _row_to_task(row: sqlite3.Row) -> Task:
         descripcion=row["descripcion"] or "",
         minutos=row["minutos"],
         categoria=row["categoria"] or "",
+        hora_inicio=row["hora_inicio"] or "",
         creado_en=row["creado_en"],
         actualizado_en=row["actualizado_en"],
     )
@@ -115,7 +117,9 @@ def _row_to_task(row: sqlite3.Row) -> Task:
 
 def list_tasks(conn: sqlite3.Connection, fecha: str) -> list[Task]:
     rows = conn.execute(
-        "SELECT * FROM tasks WHERE fecha = ? ORDER BY creado_en, id", (fecha,)
+        "SELECT * FROM tasks WHERE fecha = ? ORDER BY "
+        "CASE WHEN COALESCE(hora_inicio, '') = '' THEN 1 ELSE 0 END, "
+        "hora_inicio, creado_en, id", (fecha,)
     ).fetchall()
     return [_row_to_task(r) for r in rows]
 
@@ -130,9 +134,9 @@ def insert_task(conn: sqlite3.Connection, task: Task) -> int:
     with conn:
         cur = conn.execute(
             "INSERT INTO tasks (fecha, titulo, descripcion, minutos, categoria, "
-            "creado_en, actualizado_en) VALUES (?,?,?,?,?,?,?)",
+            "hora_inicio, creado_en, actualizado_en) VALUES (?,?,?,?,?,?,?,?)",
             (task.fecha, task.titulo, task.descripcion, task.minutos,
-             task.categoria, now, now),
+             task.categoria, task.hora_inicio, now, now),
         )
         return cur.lastrowid
 
@@ -141,9 +145,9 @@ def update_task(conn: sqlite3.Connection, task: Task) -> None:
     with conn:
         conn.execute(
             "UPDATE tasks SET fecha=?, titulo=?, descripcion=?, minutos=?, "
-            "categoria=?, actualizado_en=? WHERE id=?",
+            "categoria=?, hora_inicio=?, actualizado_en=? WHERE id=?",
             (task.fecha, task.titulo, task.descripcion, task.minutos,
-             task.categoria, datetime.now().isoformat(timespec="seconds"), task.id),
+             task.categoria, task.hora_inicio, datetime.now().isoformat(timespec="seconds"), task.id),
         )
 
 

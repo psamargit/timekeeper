@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 
 MAX_MINUTOS_TAREA = 24 * 60
+HORA_MIN = 8 * 60 + 30    # inicio del horario visible: 08:30
+HORA_MAX = 16 * 60 + 30   # fin del horario visible: 16:30
 
 
 @dataclass
@@ -12,6 +14,7 @@ class Task:
     minutos: int
     descripcion: str = ""
     categoria: str = ""
+    hora_inicio: str = ""  # "HH:MM" o "" si no tiene hora
     id: int | None = None
     creado_en: str = field(default="", repr=False)
     actualizado_en: str = field(default="", repr=False)
@@ -108,3 +111,28 @@ def validar_meta_diaria(valor: str) -> int:
     if meta <= 0 or meta > 24 * 60:
         raise ValidationError("La meta diaria debe estar entre 1 y 1440 minutos.")
     return meta
+
+
+def hora_a_minutos(texto: str) -> int | None:
+    """'HH:MM' -> minutos desde medianoche; None si no es válida."""
+    try:
+        h, m = (texto or "").strip().split(":", 1)
+        h, m = int(h), int(m)
+    except ValueError:
+        return None
+    return h * 60 + m if 0 <= h < 24 and 0 <= m < 60 else None
+
+
+def minutos_a_hora(minutos: int) -> str:
+    return f"{minutos // 60:02d}:{minutos % 60:02d}"
+
+
+def validar_hora_inicio(valor: str) -> str:
+    """Devuelve 'HH:MM' normalizada o '' si no se eligió hora."""
+    valor = (valor or "").strip()
+    if not valor or valor.lower().startswith("sin"):
+        return ""
+    m = hora_a_minutos(valor)
+    if m is None:
+        raise ValidationError("Hora de inicio inválida (usa HH:MM, ej. 08:30).")
+    return minutos_a_hora(m)
