@@ -1,4 +1,5 @@
 """Widgets y utilidades visuales compartidas."""
+import time
 import tkinter as tk
 
 import customtkinter as ctk
@@ -37,53 +38,80 @@ def multiline(parent, width=240, height=90):
     return ctk.CTkTextbox(parent, width=width, height=height)
 
 
-class ListaSeleccion(ctk.CTkFrame):
-    """Lista compacta con barra de desplazamiento; todas las opciones a la vista.
+class ListaDesplegable(ctk.CTkFrame):
+    """Desplegable de una línea; al abrirse muestra `filas` opciones con barra.
 
     Misma interfaz que un combo: get() devuelve el texto elegido, set(valor) lo elige.
     """
 
-    def __init__(self, parent, values, default=None, filas=4, ancho=9):
+    def __init__(self, parent, values, default=None, filas=5, ancho=110):
         super().__init__(parent, fg_color="transparent")
         self.values = list(values)
-        self.default = default if default in self.values else self.values[0]
-        self.lista = tk.Listbox(
-            self, height=filas, width=ancho, exportselection=False,
-            activestyle="none", relief="flat", borderwidth=0,
-            highlightthickness=1, font=("Segoe UI", 10),
+        self.filas = filas
+        self.valor = default if default in self.values else self.values[0]
+        self.popup = None
+        self._cerrado_en = 0.0
+        self.boton = ctk.CTkButton(
+            self, text="", width=ancho, anchor="w", command=self._alternar,
+            fg_color=("gray85", "gray25"), hover_color=("gray75", "gray30"),
+            text_color=("gray10", "gray90"),
         )
-        self.barra = ctk.CTkScrollbar(self, command=self.lista.yview, width=14)
-        self.lista.configure(yscrollcommand=self.barra.set)
-        self.lista.grid(row=0, column=0, sticky="nsew")
-        self.barra.grid(row=0, column=1, sticky="ns", padx=(2, 0))
-        for v in self.values:
-            self.lista.insert("end", v)
-        self._colorear(ctk.get_appearance_mode())
-        self.set(self.default)
+        self.boton.grid(row=0, column=0)
+        self.set(self.valor)
 
-    def _colorear(self, modo: str) -> None:
-        oscuro = str(modo).lower() == "dark"
-        self.lista.configure(
+    def get(self) -> str:
+        return self.valor
+
+    def set(self, valor: str) -> None:
+        self.valor = valor if valor in self.values else self.values[0]
+        self.boton.configure(text=f"{self.valor}   ▾")
+
+    def _alternar(self) -> None:
+        if self.popup is not None:
+            self._cerrar()
+        elif time.monotonic() - self._cerrado_en > 0.2:  # evita reabrir al hacer clic fuera
+            self._abrir()
+
+    def _abrir(self) -> None:
+        oscuro = ctk.get_appearance_mode().lower() == "dark"
+        top = tk.Toplevel(self)
+        top.overrideredirect(True)
+        top.attributes("-topmost", True)
+        top.geometry(f"+{self.boton.winfo_rootx()}"
+                     f"+{self.boton.winfo_rooty() + self.boton.winfo_height() + 2}")
+        lb = tk.Listbox(
+            top, height=self.filas, width=max(self.boton.cget("width") // 9, 8),
+            exportselection=False, activestyle="none", relief="flat", borderwidth=0,
+            highlightthickness=1, font=("Segoe UI", 10),
             bg="#2b2b2b" if oscuro else "#ffffff",
             fg="#e5e7eb" if oscuro else "#111827",
             selectbackground="#3b82f6", selectforeground="#ffffff",
             highlightbackground="#4b5563" if oscuro else "#d1d5db",
-            highlightcolor="#3b82f6",
         )
+        sb = tk.Scrollbar(top, orient="vertical", command=lb.yview)
+        lb.configure(yscrollcommand=sb.set)
+        lb.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        for v in self.values:
+            lb.insert("end", v)
+        i = self.values.index(self.valor)
+        lb.selection_set(i)
+        lb.see(i)
+        lb.bind("<ButtonRelease-1>", lambda e: self._elegir(lb))
+        lb.bind("<Return>", lambda e: self._elegir(lb))
+        lb.bind("<Escape>", lambda e: self._cerrar())
+        top.bind("<FocusOut>", lambda e: self._cerrar())
+        self.popup = top
+        lb.focus_force()
 
-    def _set_appearance_mode(self, mode_string):  # llamado al cambiar el tema
-        super()._set_appearance_mode(mode_string)
-        if hasattr(self, "lista"):
-            self._colorear(mode_string)
+    def _elegir(self, lb) -> None:
+        sel = lb.curselection()
+        if sel:
+            self.set(self.values[sel[0]])
+        self._cerrar()
 
-    def get(self) -> str:
-        sel = self.lista.curselection()
-        return self.values[sel[0]] if sel else self.default
-
-    def set(self, valor: str) -> None:
-        if valor not in self.values:
-            valor = self.default
-        i = self.values.index(valor)
-        self.lista.selection_clear(0, "end")
-        self.lista.selection_set(i)
-        self.lista.see(i)
+    def _cerrar(self) -> None:
+        if self.popup is not None:
+            popup, self.popup = self.popup, None
+            self._cerrado_en = time.monotonic()
+            popup.destroy()
