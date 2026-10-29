@@ -8,7 +8,8 @@ import db
 import fechas
 from models import (Task, ValidationError, validar_tarea, validar_hora_inicio,
                     minutos_a_hhmm, hhmm_a_minutos, hora_a_minutos,
-                    minutos_a_hora, HORA_MIN, HORA_MAX)
+                    minutos_a_hora, HORA_MIN, HORA_MAX,
+                    TIPOS_COMUNICACION, SIN_TIPO, validar_tipo_comunicacion)
 from ui.widgets import styled_button, field_label, entry, multiline
 
 
@@ -87,15 +88,27 @@ class DayView(ctk.CTkFrame):
         styled_button(form, "Guardar", self.guardar, primary=True
                       ).grid(row=2, column=5, padx=12, sticky="ew")
 
-        field_label(form, "Nota breve").grid(row=3, column=0, columnspan=6, sticky="ew",
+        field_label(form, "Tipo de comunicación").grid(row=3, column=0, columnspan=2,
+                                                       sticky="w", padx=12, pady=(8, 2))
+        self.in_tipo = ctk.CTkComboBox(form, values=TIPOS_COMUNICACION, width=180,
+                                       state="readonly")
+        self.in_tipo.set(SIN_TIPO)
+        self.in_tipo.grid(row=4, column=0, columnspan=2, sticky="w", padx=12)
+
+        field_label(form, "Usuario solicitante").grid(row=3, column=2, columnspan=3,
+                                                      sticky="w", padx=12, pady=(8, 2))
+        self.in_solicitante = entry(form, "Nombre o usuario de quien lo pidió")
+        self.in_solicitante.grid(row=4, column=2, columnspan=3, sticky="ew", padx=12)
+
+        field_label(form, "Nota breve").grid(row=5, column=0, columnspan=6, sticky="ew",
                                              padx=12, pady=(8, 2))
         self.in_descripcion = multiline(form, height=60)
-        self.in_descripcion.grid(row=4, column=0, columnspan=6, sticky="ew",
+        self.in_descripcion.grid(row=6, column=0, columnspan=6, sticky="ew",
                                  padx=12, pady=(0, 4))
         self.in_descripcion.grid_columnconfigure(0, weight=1)
 
         self.lbl_form_state = ctk.CTkLabel(form, text="", font=ctk.CTkFont(size=12))
-        self.lbl_form_state.grid(row=5, column=0, columnspan=6, sticky="e", padx=12,
+        self.lbl_form_state.grid(row=7, column=0, columnspan=6, sticky="e", padx=12,
                                  pady=(0, 10))
 
     def _build_list(self):
@@ -155,6 +168,8 @@ class DayView(ctk.CTkFrame):
         self.in_categoria.delete(0, "end")
         self.in_descripcion.delete("1.0", "end")
         self.in_hora.set(SIN_HORA)
+        self.in_tipo.set(SIN_TIPO)
+        self.in_solicitante.delete(0, "end")
         self.lbl_form_state.configure(text="")
 
     def guardar(self):
@@ -163,6 +178,7 @@ class DayView(ctk.CTkFrame):
                 self.in_titulo.get(), self.in_minutos.get(), self.fecha.isoformat()
             )
             hora = validar_hora_inicio(self.in_hora.get())
+            tipo = validar_tipo_comunicacion(self.in_tipo.get())
         except ValidationError as e:
             self.lbl_form_state.configure(text=str(e), text_color=("#c0392b", "#e05d52"))
             return
@@ -172,6 +188,8 @@ class DayView(ctk.CTkFrame):
             descripcion=self.in_descripcion.get("1.0", "end").strip(),
             categoria=self.in_categoria.get().strip(),
             hora_inicio=hora,
+            tipo_comunicacion=tipo,
+            usuario_solicitante=self.in_solicitante.get().strip(),
             id=self.editando_id,
         )
         if self.editando_id is None:
@@ -197,6 +215,9 @@ class DayView(ctk.CTkFrame):
         self.in_descripcion.delete("1.0", "end")
         self.in_descripcion.insert("1.0", task.descripcion)
         self.in_hora.set(task.hora_inicio or SIN_HORA)
+        self.in_tipo.set(task.tipo_comunicacion or SIN_TIPO)
+        self.in_solicitante.delete(0, "end")
+        self.in_solicitante.insert(0, task.usuario_solicitante)
         self.lbl_form_state.configure(text="Editando tarea — guarda para aplicar.",
                                       text_color=("#2563eb", "#3b82f6"))
         self.in_titulo.focus_set()
@@ -275,10 +296,19 @@ class DayView(ctk.CTkFrame):
             titulo += f"   [{t.categoria}]"
         ctk.CTkLabel(info, text=titulo, font=ctk.CTkFont(size=13, weight="bold"),
                      anchor="w").grid(row=0, column=0, sticky="ew")
+        detalle = []
+        if t.tipo_comunicacion:
+            detalle.append(f"Vía {t.tipo_comunicacion}")
+        if t.usuario_solicitante:
+            detalle.append(f"Solicita: {t.usuario_solicitante}")
+        if detalle:
+            ctk.CTkLabel(info, text=" · ".join(detalle), font=ctk.CTkFont(size=12),
+                         anchor="w", text_color=("#2563eb", "#60a5fa")
+                         ).grid(row=1, column=0, sticky="ew")
         if t.descripcion:
             ctk.CTkLabel(info, text=t.descripcion, font=ctk.CTkFont(size=12),
                          anchor="w", text_color=("gray40", "gray60")
-                         ).grid(row=1, column=0, sticky="ew")
+                         ).grid(row=2, column=0, sticky="ew")
         styled_button(row, "✏", lambda: self._cargar_para_editar(t), width=34
                       ).grid(row=0, column=2, padx=(4, 4), pady=6)
         styled_button(row, "🗑", lambda: self._eliminar(t), width=34, danger=True
