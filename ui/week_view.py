@@ -42,12 +42,12 @@ class WeekView(ctk.CTkFrame):
                       ).grid(row=0, column=3, padx=(8, 0))
 
     def _build_grid(self):
-        self.grid = ctk.CTkFrame(self, fg_color="transparent")
-        self.grid.grid(row=1, column=0, sticky="nsew")
+        self.cuadricula = ctk.CTkFrame(self, fg_color="transparent")
+        self.cuadricula.grid(row=1, column=0, sticky="nsew")
         for c in range(4):
-            self.grid.grid_columnconfigure(c, weight=1, uniform="dia")
+            self.cuadricula.grid_columnconfigure(c, weight=1, uniform="dia")
         for r in range(2):
-            self.grid.grid_rowconfigure(r, weight=1, uniform="sem")
+            self.cuadricula.grid_rowconfigure(r, weight=1, uniform="sem")
 
     def mover_semana(self, delta: int):
         self.ref += timedelta(days=7 * delta)
@@ -58,7 +58,7 @@ class WeekView(ctk.CTkFrame):
         self.refrescar()
 
     def refrescar(self):
-        for w in self.grid.winfo_children():
+        for w in self.cuadricula.winfo_children():
             w.destroy()
         dias = fechas.week_dates(self.ref)
         lunes, domingo = dias[0], dias[-1]
@@ -78,7 +78,7 @@ class WeekView(ctk.CTkFrame):
         tareas = db.list_tasks(self.conn, d.isoformat())
 
         border = ("#2563eb", "#3b82f6") if es_hoy else ("gray78", "gray28")
-        card = ctk.CTkFrame(self.grid, corner_radius=12, border_width=2 if es_hoy else 1,
+        card = ctk.CTkFrame(self.cuadricula, corner_radius=12, border_width=2 if es_hoy else 1,
                             border_color=border)
         card.grid(row=row, column=col, sticky="nsew", padx=6, pady=6)
         card.grid_columnconfigure(0, weight=1)
