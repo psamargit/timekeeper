@@ -40,6 +40,8 @@ MIGRATIONS = [
     )
     """,
     "ALTER TABLE tasks ADD COLUMN hora_inicio TEXT DEFAULT ''",
+    "ALTER TABLE tasks ADD COLUMN tipo_comunicacion TEXT DEFAULT ''",
+    "ALTER TABLE tasks ADD COLUMN usuario_solicitante TEXT DEFAULT ''",
 ]
 
 
@@ -110,6 +112,8 @@ def _row_to_task(row: sqlite3.Row) -> Task:
         minutos=row["minutos"],
         categoria=row["categoria"] or "",
         hora_inicio=row["hora_inicio"] or "",
+        tipo_comunicacion=row["tipo_comunicacion"] or "",
+        usuario_solicitante=row["usuario_solicitante"] or "",
         creado_en=row["creado_en"],
         actualizado_en=row["actualizado_en"],
     )
@@ -134,9 +138,11 @@ def insert_task(conn: sqlite3.Connection, task: Task) -> int:
     with conn:
         cur = conn.execute(
             "INSERT INTO tasks (fecha, titulo, descripcion, minutos, categoria, "
-            "hora_inicio, creado_en, actualizado_en) VALUES (?,?,?,?,?,?,?,?)",
+            "hora_inicio, tipo_comunicacion, usuario_solicitante, "
+            "creado_en, actualizado_en) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (task.fecha, task.titulo, task.descripcion, task.minutos,
-             task.categoria, task.hora_inicio, now, now),
+             task.categoria, task.hora_inicio, task.tipo_comunicacion,
+             task.usuario_solicitante, now, now),
         )
         return cur.lastrowid
 
@@ -145,9 +151,11 @@ def update_task(conn: sqlite3.Connection, task: Task) -> None:
     with conn:
         conn.execute(
             "UPDATE tasks SET fecha=?, titulo=?, descripcion=?, minutos=?, "
-            "categoria=?, hora_inicio=?, actualizado_en=? WHERE id=?",
+            "categoria=?, hora_inicio=?, tipo_comunicacion=?, "
+            "usuario_solicitante=?, actualizado_en=? WHERE id=?",
             (task.fecha, task.titulo, task.descripcion, task.minutos,
-             task.categoria, task.hora_inicio, datetime.now().isoformat(timespec="seconds"), task.id),
+             task.categoria, task.hora_inicio, task.tipo_comunicacion,
+             task.usuario_solicitante, datetime.now().isoformat(timespec="seconds"), task.id),
         )
 
 

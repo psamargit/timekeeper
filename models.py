@@ -5,6 +5,8 @@ from datetime import date, datetime
 MAX_MINUTOS_TAREA = 24 * 60
 HORA_MIN = 8 * 60 + 30    # inicio del horario visible: 08:30
 HORA_MAX = 16 * 60 + 30   # fin del horario visible: 16:30
+SIN_TIPO = "Sin especificar"
+TIPOS_COMUNICACION = [SIN_TIPO, "Correo", "Teams", "Ticket iTop", "Echaski", "Otro"]
 
 
 @dataclass
@@ -15,6 +17,8 @@ class Task:
     descripcion: str = ""
     categoria: str = ""
     hora_inicio: str = ""  # "HH:MM" o "" si no tiene hora
+    tipo_comunicacion: str = ""  # Correo, Teams, Ticket iTop, Echaski, Otro
+    usuario_solicitante: str = ""
     id: int | None = None
     creado_en: str = field(default="", repr=False)
     actualizado_en: str = field(default="", repr=False)
@@ -136,3 +140,13 @@ def validar_hora_inicio(valor: str) -> str:
     if m is None:
         raise ValidationError("Hora de inicio inválida (usa HH:MM, ej. 08:30).")
     return minutos_a_hora(m)
+
+
+def validar_tipo_comunicacion(valor: str) -> str:
+    """Devuelve el tipo elegido o '' si es 'Sin especificar'."""
+    valor = (valor or "").strip()
+    if not valor or valor == SIN_TIPO:
+        return ""
+    if valor not in TIPOS_COMUNICACION:
+        raise ValidationError("Tipo de comunicación inválido.")
+    return valor
