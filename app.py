@@ -62,6 +62,7 @@ class App(ctk.CTk):
             self,
             segmented_button_fg_color=("gray86", "gray20"),
             anchor="w",
+            command=self._al_cambiar_pestana,
         )
         self.tabs.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
         nombres = ("Registro del día", "Calendario semanal",
@@ -84,6 +85,15 @@ class App(ctk.CTk):
         self.settings_view.grid(row=0, column=0, sticky="nsew", padx=14, pady=12)
 
     # ---------- helpers de UI ----------
+
+    def _al_cambiar_pestana(self) -> None:
+        # El calendario se dibuja una sola vez: lo refrescamos al entrar.
+        if self.tabs.get() == "Calendario semanal":
+            self.week_view.refrescar()
+
+    def refrescar_calendario(self) -> None:
+        if hasattr(self, "week_view"):
+            self.week_view.refrescar()
 
     def toast(self, mensaje: str, tipo: str = "exito") -> None:
         color = ("#1d9a53", "#2fb86d") if tipo == "exito" else ("#c0392b", "#e05d52")
