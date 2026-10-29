@@ -10,7 +10,7 @@ from models import (Task, ValidationError, validar_tarea, validar_hora_inicio,
                     minutos_a_hhmm, hhmm_a_minutos, hora_a_minutos,
                     minutos_a_hora, HORA_MIN, HORA_MAX,
                     TIPOS_COMUNICACION, SIN_TIPO, validar_tipo_comunicacion)
-from ui.widgets import styled_button, field_label, entry, multiline
+from ui.widgets import styled_button, field_label, entry, multiline, ListaSeleccion
 
 
 ESCALA = 1.5          # píxeles por minuto en el horario
@@ -72,8 +72,7 @@ class DayView(ctk.CTkFrame):
 
         field_label(form, "Hora de inicio").grid(row=1, column=2, padx=12,
                                                  pady=(4, 2), sticky="w")
-        self.in_hora = ctk.CTkComboBox(form, values=HORAS, width=110)
-        self.in_hora.set(SIN_HORA)
+        self.in_hora = ListaSeleccion(form, HORAS, default=SIN_HORA, filas=3, ancho=8)
         self.in_hora.grid(row=2, column=2, padx=12, sticky="w")
 
         field_label(form, "Duración (min u h:mm) *").grid(row=1, column=3, padx=12,
