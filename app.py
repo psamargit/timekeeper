@@ -64,10 +64,10 @@ class App(ctk.CTk):
             anchor="w",
         )
         self.tabs.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
-        for nombre in ("Registro del día", "Calendario semanal",
-                       "Base de conocimiento", "Ajustes"):
-            self.tabs.add(nombre)
-        for tab in self.tabs.tabs().values():
+        nombres = ("Registro del día", "Calendario semanal",
+                   "Base de conocimiento", "Ajustes")
+        for nombre in nombres:
+            tab = self.tabs.add(nombre)
             tab.grid_rowconfigure(0, weight=1)
             tab.grid_columnconfigure(0, weight=1)
 
