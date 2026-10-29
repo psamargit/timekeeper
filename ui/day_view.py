@@ -183,6 +183,7 @@ class DayView(ctk.CTkFrame):
         self.editando_id = None
         self._limpiar_form()
         self.refrescar()
+        self.app.refrescar_calendario()
         self.app.toast(msg)
 
     def _cargar_para_editar(self, task: Task):
@@ -212,6 +213,7 @@ class DayView(ctk.CTkFrame):
             self.editando_id = None
             self._limpiar_form()
         self.refrescar()
+        self.app.refrescar_calendario()
         self.app.toast("Tarea eliminada.")
 
     def refrescar(self):
